@@ -5,6 +5,36 @@ require './lib/game'
 require './lib/cell'
 require './lib/board'
 
+
+require 'irb'
+
+module IRB
+  def self.start_session(binding)
+    IRB.setup(nil)
+
+    workspace = WorkSpace.new(binding)
+
+    if @CONF[:SCRIPT]
+      irb = Irb.new(workspace, @CONF[:SCRIPT])
+    else
+      irb = Irb.new(workspace)
+    end
+
+    @CONF[:IRB_RC].call(irb.context) if @CONF[:IRB_RC]
+    @CONF[:MAIN_CONTEXT] = irb.context
+
+    trap("SIGINT") do
+      irb.signal_handle
+    end
+
+    catch(:IRB_EXIT) do
+      irb.eval_input
+    end
+  end
+end
+
+
+
 game = Game.new
 player1 = Player.new
 player2 = Player.new
@@ -17,15 +47,15 @@ game.add_player(player2)
 player1.board = board1
 player2.board = board2
 
-fleet1.each_with_index do |ship, index| 
+fleet1.each_with_index do |ship, index|
 	coord = ("A" + (index + 1).to_s).to_sym
 	board1.place(ship, coord, :vertically)
 end
 
-fleet2.each_with_index do |ship, index| 
+fleet2.each_with_index do |ship, index|
 	coord = ("A" + (index + 1).to_s).to_sym
 	board2.place(ship, coord, :vertically)
 end
 
 
-
+IRB.start_session(Kernel.binding)
